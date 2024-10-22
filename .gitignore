@@ -1,0 +1,4 @@
+.venv
+devices.csv
+sockets/devices.csv
+sockets/output.csv
