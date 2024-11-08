@@ -5,7 +5,6 @@ from datetime import datetime
 def calcular_diferenca(datainicial, datafinal):
     formatos_data = ["%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"]  # Formatos com e sem microssegundos
     
-    # Tentar primeiro com microssegundos, depois sem
     for formato in formatos_data:
         try:
             dt_inicial = datetime.strptime(datainicial, formato)
@@ -14,9 +13,7 @@ def calcular_diferenca(datainicial, datafinal):
         except ValueError:
             continue
     
-    # Tratamento para quando as strings não coincidirem em formato (com/sem microssegundos)
     try:
-        # Converter datainicial e datafinal para o mesmo formato (adicionando .000000 caso não tenha microssegundos)
         if "." not in datainicial:
             datainicial += ".000000"
         if "." not in datafinal:
@@ -24,46 +21,67 @@ def calcular_diferenca(datainicial, datafinal):
         
         dt_inicial = datetime.strptime(datainicial, "%Y-%m-%d %H:%M:%S.%f")
         dt_final = datetime.strptime(datafinal, "%Y-%m-%d %H:%M:%S.%f")
-        return dt_final - dt_inicial  # Retorna a diferença em timedelta
+        return dt_final - dt_inicial
     except ValueError:
         raise ValueError(f"Formato de data inválido para as datas: {datainicial} ou {datafinal}")
 
-# Função para registrar e calcular intervalos
-def registrar_leitura(device, data, temperatura):
+# Função para registrar e calcular intervalos para cada variável (temperatura, umidade, luminosidade)
+def registrar_leitura(device, data, temperatura, umidade, luminosidade):
     if device not in hash_map:
         # Primeira leitura do dispositivo
         hash_map[device] = {
-            "temperatura": temperatura,
-            "datainicial": data,
-            "datafinal": data,
+            "temperatura": {"valor": temperatura, "datainicial": data, "datafinal": data},
+            "umidade": {"valor": umidade, "datainicial": data, "datafinal": data},
+            "luminosidade": {"valor": luminosidade, "datainicial": data, "datafinal": data},
         }
     else:
-        # O dispositivo já existe, verificar a temperatura
-        if hash_map[device]['temperatura'] == temperatura:
-            # A temperatura não mudou, atualiza a data final
-            hash_map[device]['datafinal'] = data
+        # Verifica a temperatura
+        if hash_map[device]['temperatura']['valor'] == temperatura:
+            hash_map[device]['temperatura']['datafinal'] = data
         else:
-            # A temperatura mudou, finalize o intervalo anterior
-            diferenca = calcular_diferenca(hash_map[device]['datainicial'], hash_map[device]['datafinal'])
-            # Armazena o intervalo finalizado
-            intervalos.append({
+            diferenca = calcular_diferenca(hash_map[device]['temperatura']['datainicial'], hash_map[device]['temperatura']['datafinal'])
+            intervalos_temperatura.append({
                 "device": device,
-                "temperatura": hash_map[device]['temperatura'],
-                "datainicial": hash_map[device]['datainicial'],
-                "datafinal": hash_map[device]['datafinal'],
+                "valor": hash_map[device]['temperatura']['valor'],
+                "datainicial": hash_map[device]['temperatura']['datainicial'],
+                "datafinal": hash_map[device]['temperatura']['datafinal'],
                 "diferenca": diferenca
             })
-            
-            # Reinicia o intervalo com a nova temperatura
-            hash_map[device] = {
-                "temperatura": temperatura,
-                "datainicial": data,
-                "datafinal": data,
-            }
+            hash_map[device]['temperatura'] = {"valor": temperatura, "datainicial": data, "datafinal": data}
+        
+        # Verifica a umidade
+        if hash_map[device]['umidade']['valor'] == umidade:
+            hash_map[device]['umidade']['datafinal'] = data
+        else:
+            diferenca = calcular_diferenca(hash_map[device]['umidade']['datainicial'], hash_map[device]['umidade']['datafinal'])
+            intervalos_umidade.append({
+                "device": device,
+                "valor": hash_map[device]['umidade']['valor'],
+                "datainicial": hash_map[device]['umidade']['datainicial'],
+                "datafinal": hash_map[device]['umidade']['datafinal'],
+                "diferenca": diferenca
+            })
+            hash_map[device]['umidade'] = {"valor": umidade, "datainicial": data, "datafinal": data}
+        
+        # Verifica a luminosidade
+        if hash_map[device]['luminosidade']['valor'] == luminosidade:
+            hash_map[device]['luminosidade']['datafinal'] = data
+        else:
+            diferenca = calcular_diferenca(hash_map[device]['luminosidade']['datainicial'], hash_map[device]['luminosidade']['datafinal'])
+            intervalos_luminosidade.append({
+                "device": device,
+                "valor": hash_map[device]['luminosidade']['valor'],
+                "datainicial": hash_map[device]['luminosidade']['datainicial'],
+                "datafinal": hash_map[device]['luminosidade']['datafinal'],
+                "diferenca": diferenca
+            })
+            hash_map[device]['luminosidade'] = {"valor": luminosidade, "datainicial": data, "datafinal": data}
 
-# Inicialização do hash_map e lista de intervalos
+# Inicialização dos hash_map e listas de intervalos
 hash_map = {}
-intervalos = []
+intervalos_temperatura = []
+intervalos_umidade = []
+intervalos_luminosidade = []
 
 # Caminho do arquivo CSV
 caminho = './devices.csv'
@@ -73,37 +91,44 @@ with open(caminho, mode='r', newline='', encoding='utf-8') as arquivo_csv:
     leitor_csv = csv.reader(arquivo_csv)
     next(leitor_csv)  # Pula o cabeçalho
     for linha in leitor_csv:
-        # Separar as partes da linha
         partes = linha[0].split('|')
-        # Verificar se a linha está completa
-        if not partes[1] or not partes[3] or not partes[4]:
+        if not partes[1] or not partes[3] or not partes[4] or not partes[5] or not partes[6]:
             continue
-            
+
         device = partes[1]
         data = partes[3]
         temperatura = partes[4]
+        umidade = partes[5]
+        luminosidade = partes[6]
         
-        # Registrar a leitura de temperatura no dispositivo
-        registrar_leitura(device, data, temperatura)
+        # Registrar a leitura de temperatura, umidade e luminosidade
+        registrar_leitura(device, data, temperatura, umidade, luminosidade)
 
-# Ordenar os intervalos pela maior diferença de tempo
-intervalos_ordenados = sorted(intervalos, key=lambda x: x['diferenca'], reverse=True)
+# Ordenar os intervalos pelas maiores diferenças de tempo
+intervalos_temperatura_ordenados = sorted(intervalos_temperatura, key=lambda x: x['diferenca'], reverse=True)
+intervalos_umidade_ordenados = sorted(intervalos_umidade, key=lambda x: x['diferenca'], reverse=True)
+intervalos_luminosidade_ordenados = sorted(intervalos_luminosidade, key=lambda x: x['diferenca'], reverse=True)
 
 # Exibir os 50 maiores intervalos
-print("50 maiores intervalos em que a temperatura não mudou:")
+def exibir_resultados(intervalos_ordenados, tipo):
+    print()
+    print(f"50 maiores intervalos em que a {tipo} não mudou:")
+    i = 1
+    for intervalo in intervalos_ordenados[:50]:
+        device = intervalo['device']
+        valor = intervalo['valor']
+        datainicial = intervalo['datainicial']
+        datafinal = intervalo['datafinal']
+        diferenca = intervalo['diferenca']
+        
+        print(f"Dispositivo {i}: {device}")
+        print(f"  {tipo.capitalize()}: {valor}")
+        #print(f"  Data Inicial: {datainicial}")
+        #print(f"  Data Final: {datafinal}")
+        print(f"  Duração: {diferenca}")
+        i += 1
 
-
-i=1
-for intervalo in intervalos_ordenados[:50]:
-    device = intervalo['device']
-    temperatura = intervalo['temperatura']
-    datainicial = intervalo['datainicial']
-    datafinal = intervalo['datafinal']
-    diferenca = intervalo['diferenca']
-    
-    print(f"Dispositivo {i}: {device}")
-    print(f"  Temperatura: {temperatura}")
-    print(f"  Data Inicial: {datainicial}")
-    print(f"  Data Final: {datafinal}")
-    print(f"  Duração: {diferenca}")
-    i += 1
+# Exibindo os resultados
+exibir_resultados(intervalos_temperatura_ordenados, "temperatura")
+exibir_resultados(intervalos_umidade_ordenados, "umidade")
+exibir_resultados(intervalos_luminosidade_ordenados, "luminosidade")
