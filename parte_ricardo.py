@@ -114,7 +114,7 @@ def exibir_resultados(intervalos_ordenados, tipo):
     print()
     print(f"50 maiores intervalos em que a {tipo} não mudou:")
     i = 1
-    for intervalo in intervalos_ordenados[:50]:
+    for intervalo in intervalos_ordenados[:5]:
         device = intervalo['device']
         valor = intervalo['valor']
         datainicial = intervalo['datainicial']
@@ -123,8 +123,8 @@ def exibir_resultados(intervalos_ordenados, tipo):
         
         print(f"Dispositivo {i}: {device}")
         print(f"  {tipo.capitalize()}: {valor}")
-        #print(f"  Data Inicial: {datainicial}")
-        #print(f"  Data Final: {datafinal}")
+        (f"  Data Inicial: {datainicial}")
+        (f"  Data Final: {datafinal}")
         print(f"  Duração: {diferenca}")
         i += 1
 
