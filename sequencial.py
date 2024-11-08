@@ -1,47 +1,13 @@
 import csv
-import datetime
+import time
+from lib import exibir_maiores_intervalos, calcular_diferenca_datas
+from device import Device, Sensor
 
 devices = {}
 
 temperature_intervals = []
 humidity_intervals = []
 luminosity_intervals = []
-
-class Sensor:
-    def __init__(self, value: float, interval_start_date: str, interval_end_date: str):
-        self.value = value
-        self.interval_start_date = interval_start_date
-        self.interval_end_date = interval_end_date
-
-class Device:
-    def __init__(self, temperature: Sensor, humidity: Sensor, luminosity: Sensor):
-        self.temperature = temperature
-        self.humidity = humidity
-        self.luminosity = luminosity
-
-# Função para calcular a diferença entre datainicial e datafinal
-def calcular_diferenca(datainicial, datafinal):
-    formatos_data = ["%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"]  # Formatos com e sem microssegundos
-    
-    for formato in formatos_data:
-        try:
-            dt_inicial = datetime.datetime.strptime(datainicial, formato)
-            dt_final = datetime.datetime.strptime(datafinal, formato)
-            return dt_final - dt_inicial  # Retorna a diferença em timedelta
-        except ValueError:
-            continue
-    
-    try:
-        if "." not in datainicial:
-            datainicial += ".000000"
-        if "." not in datafinal:
-            datafinal += ".000000"
-        
-        dt_inicial = datetime.datetime.strptime(datainicial, "%Y-%m-%d %H:%M:%S.%f")
-        dt_final = datetime.datetime.strptime(datafinal, "%Y-%m-%d %H:%M:%S.%f")
-        return dt_final - dt_inicial  # Retorna a diferença em timedelta
-    except ValueError:
-        raise ValueError(f"Formato de data inválido para as datas: {datainicial} ou {datafinal}")
 
 def register_row(row):
     if '' in row:
@@ -65,7 +31,7 @@ def register_row(row):
         if device.temperature.value == temperature:
             device.temperature.interval_end_date = current_date
         else:
-            interval = calcular_diferenca(device.temperature.interval_start_date, device.temperature.interval_end_date)
+            interval = calcular_diferenca_datas(device.temperature.interval_start_date, device.temperature.interval_end_date)
             temperature_intervals.append({
                 "device": device_name,
                 "value": device.temperature.value,
@@ -81,7 +47,7 @@ def register_row(row):
         if device.humidity.value == humidity:
             device.humidity.interval_end_date = current_date
         else:
-            interval = calcular_diferenca(device.humidity.interval_start_date, device.humidity.interval_end_date)
+            interval = calcular_diferenca_datas(device.humidity.interval_start_date, device.humidity.interval_end_date)
             humidity_intervals.append({
                 "device": device_name,
                 "value": device.humidity.value,
@@ -97,7 +63,7 @@ def register_row(row):
         if device.luminosity.value == luminosity:
             device.luminosity.interval_end_date = current_date
         else:
-            interval = calcular_diferenca(device.luminosity.interval_start_date, device.luminosity.interval_end_date)
+            interval = calcular_diferenca_datas(device.luminosity.interval_start_date, device.luminosity.interval_end_date)
             luminosity_intervals.append({
                 "device": device_name,
                 "value": device.luminosity.value,
@@ -109,6 +75,8 @@ def register_row(row):
             device.luminosity.interval_start_date = current_date
             device.luminosity.interval_end_date = current_date
 
+initial_time = time.time()
+
 # Leitura do arquivo CSV
 with open("devices.csv", mode='r', newline='', encoding='utf-8') as csv_file:
     csv_reader = csv.reader(csv_file)
@@ -117,26 +85,11 @@ with open("devices.csv", mode='r', newline='', encoding='utf-8') as csv_file:
         row = line[0].split('|')
         register_row(row)
 
-# Função para exibir os 5 maiores intervalos
-def exibir_maiores_intervalos(intervalos, sensor_tipo):
-    intervalos_ordenados = sorted(intervalos, key=lambda x: x['interval_time'], reverse=True)
-    print(f"Top 5 maiores intervalos para {sensor_tipo}:")
-    i=1
-    for intervalo in intervalos_ordenados[:5]:
-        device = intervalo['device']
-        value = intervalo['value']
-        interval_start_date = intervalo['interval_start_date']
-        interval_end_date = intervalo['interval_end_date']
-        interval_time = intervalo['interval_time']
-        
-        print(f"{i} Travamento:")
-        print(f"  Dispositivo: {device}")
-        print(f"  Valor: {value}")
-        print(f"  Data Inicial: {interval_start_date}")
-        print(f"  Data Final: {interval_end_date}")
-        print(f"  Duração: {interval_time}\n")
-        i+=1
-    print('\n\n')
+final_time = time.time()
+
 exibir_maiores_intervalos(temperature_intervals, "temperatura")
 exibir_maiores_intervalos(humidity_intervals, "umidade")
 exibir_maiores_intervalos(luminosity_intervals, "luminosidade")
+
+total_time = final_time - initial_time
+print(f"{final_time:.2f}")

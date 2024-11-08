@@ -2,7 +2,7 @@ import socket
 
 host = "localhost"
 port = 727
-data_payload= 1024 
+data_payload= 2048 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind((host, port))
