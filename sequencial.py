@@ -92,4 +92,4 @@ exibir_maiores_intervalos(humidity_intervals, "umidade")
 exibir_maiores_intervalos(luminosity_intervals, "luminosidade")
 
 total_time = final_time - initial_time
-print(f"{final_time:.2f}")
+print(f"{total_time:.2f}")
