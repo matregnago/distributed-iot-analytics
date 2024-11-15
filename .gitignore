@@ -2,3 +2,4 @@
 devices.csv
 sockets/devices.csv
 sockets/output.csv
+__pycache__
