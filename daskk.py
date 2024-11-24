@@ -1,5 +1,12 @@
+import dask
+from dask import delayed
 import dask.dataframe as dd
+from dask.distributed import Client
 import pandas as pd
+
+dask.config.set({'distributed.worker.threads': 4})  # Número de threads por worker
+dask.config.set({'distributed.worker.nprocs': 2})  # Número de processos
+
 
 
 def exibir_maiores_intervalos(intervalos, sensor_tipo):
