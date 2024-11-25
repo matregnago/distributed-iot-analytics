@@ -1,6 +1,8 @@
+from mpi4py import MPI
 from collections import defaultdict
 import csv
 import datetime
+import time
 
 def exibir_maiores_intervalos(intervalos, sensor_tipo):
     intervalos_ordenados = sorted(intervalos, key=lambda x: x['interval_time'], reverse=True)
@@ -179,3 +181,62 @@ def gerar_chunks(devices_data, n_processes):
         chunks.append(chunk)
         start = end
     return chunks
+
+
+def main():
+    comm = MPI.COMM_WORLD
+    n_processes = comm.Get_size()
+    rank = comm.Get_rank()
+    initial_time = time.time()
+
+    if rank == 0:
+        devices_data = cria_estrutura_devices("devices.csv")
+        chunks = gerar_chunks(devices_data, n_processes)
+    else:
+        chunks = None
+
+    
+    local_chunk = comm.scatter(chunks, root=0)
+
+    
+    local_intervalos_temperatura = []
+    local_intervalos_umidade = []
+    local_intervalos_luminosidade = []
+    
+    for device in iter(local_chunk):
+        temperature_intervals, humidity_intervals, luminosity_intervals = process_device_data(device, local_chunk[device])
+        local_intervalos_temperatura.extend(get_top_50_intervals(temperature_intervals))
+        local_intervalos_umidade.extend(get_top_50_intervals(humidity_intervals))
+        local_intervalos_luminosidade.extend(get_top_50_intervals(luminosity_intervals))
+
+
+    comm.barrier()
+
+    global_intervalos_temperatura = comm.gather(local_intervalos_temperatura, root=0)
+    global_intervalos_umidade = comm.gather(local_intervalos_umidade, root=0)
+    global_intervalos_luminosidade = comm.gather(local_intervalos_luminosidade, root=0)
+
+    if rank == 0:
+        global_intervalos_temperatura = [interval for sublist in global_intervalos_temperatura for interval in sublist]
+        global_intervalos_umidade = [interval for sublist in global_intervalos_umidade for interval in sublist]
+        global_intervalos_luminosidade = [interval for sublist in global_intervalos_luminosidade for interval in sublist]
+
+
+        top_50_temperature = get_top_50_intervals(global_intervalos_temperatura)
+        top_50_humidity = get_top_50_intervals(global_intervalos_umidade)
+        top_50_luminosity = get_top_50_intervals(global_intervalos_luminosidade)
+        final_time = time.time()
+        exibir_maiores_intervalos(top_50_temperature, "temperatura")
+        exibir_maiores_intervalos(top_50_humidity, "umidade")
+        exibir_maiores_intervalos(top_50_luminosity, "luminosidade")
+
+        total_time = final_time - initial_time
+        print(f"Tempo total de processamento: {total_time:.2f} segundos.")
+
+
+if __name__ == "__main__":
+    main()
+    
+    
+
+
