@@ -6,23 +6,35 @@ import datetime
 
 def exibir_maiores_intervalos(intervalos, sensor_tipo):
     intervalos_ordenados = sorted(intervalos, key=lambda x: x['interval_time'], reverse=True)
-    print(f"Top 5 maiores intervalos para {sensor_tipo}:")
-    i=1
-    for intervalo in intervalos_ordenados[:5]:
+    resultado = f"Top 50 maiores intervalos para {sensor_tipo}:\n"
+    i = 1
+    for intervalo in intervalos_ordenados[:50]:
         device = intervalo['device']
         value = intervalo['value']
         interval_start_date = intervalo['interval_start_date']
         interval_end_date = intervalo['interval_end_date']
         interval_time = intervalo['interval_time']
         
-        print(f"{i} Travamento:")
-        print(f"  Dispositivo: {device}")
-        print(f"  Valor: {value}")
-        print(f"  Data Inicial: {interval_start_date}")
-        print(f"  Data Final: {interval_end_date}")
-        print(f"  Duração: {interval_time}\n")
-        i+=1
-    print('\n\n')
+        resultado += f"{i} Travamento:\n"
+        resultado += f"  Dispositivo: {device}\n"
+        resultado += f"  Valor: {value}\n"
+        resultado += f"  Data Inicial: {interval_start_date}\n"
+        resultado += f"  Data Final: {interval_end_date}\n"
+        resultado += f"  Duração: {interval_time}\n\n"
+        i += 1
+    return resultado
+
+def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, intervalos_luminosidade, tempo_total):
+    # Exibir os intervalos e combinar com o tempo total
+    resultado_temperatura = exibir_maiores_intervalos(intervalos_temperatura, "temperatura")
+    resultado_umidade = exibir_maiores_intervalos(intervalos_umidade, "umidade")
+    resultado_luminosidade = exibir_maiores_intervalos(intervalos_luminosidade, "luminosidade")
+
+    # Montando a string final com todas as informações
+    resultado_completo = f"{resultado_temperatura}\n{resultado_umidade}\n{resultado_luminosidade}"
+    resultado_completo += f"\nTempo total de processamento: {tempo_total:.2f} segundos.\n"
+    
+    return resultado_completo
 
 def calcular_diferenca_datas(datainicial, datafinal):
     formatos_data = ["%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"]  # Formatos com e sem microssegundos
@@ -163,17 +175,14 @@ def get_top_50_intervals(intervals):
     sorted_intervals = sorted(intervals, key=lambda x: x["interval_time"], reverse=True)
     return sorted_intervals[:50]
 
-if __name__ == '__main__':
+def multiproc(n_processes):
     initial_time = time.time()
+    nthreads = int(n_processes)
+    devices_data = cria_estrutura_devices("dados_recebidos.csv")
     
-    devices_data = cria_estrutura_devices("devices.csv")
-    
-    n_processes = 8
-    # 2. Processamento em paralelo
-    with multiprocessing.Pool(processes=n_processes) as pool:
+    with multiprocessing.Pool(processes=nthreads) as pool:
         results = pool.starmap(process_device_data, devices_data.items())
     
-    # 3. Combinar resultados
     combined_temperature_intervals = []
     combined_humidity_intervals = []
     combined_luminosity_intervals = []
@@ -182,17 +191,13 @@ if __name__ == '__main__':
         combined_humidity_intervals.extend(h_ints)
         combined_luminosity_intervals.extend(l_ints)
     
-    # 4. Encontrar os 50 maiores intervalos para cada variável
     top_50_temperature = get_top_50_intervals(combined_temperature_intervals)
     top_50_humidity = get_top_50_intervals(combined_humidity_intervals)
     top_50_luminosity = get_top_50_intervals(combined_luminosity_intervals)
     
     final_time = time.time()
-    
-    # 5. Exibir os resultados
-    exibir_maiores_intervalos(top_50_temperature, "temperatura")
-    exibir_maiores_intervalos(top_50_humidity, "umidade")
-    exibir_maiores_intervalos(top_50_luminosity, "luminosidade")
-    
     total_time = final_time - initial_time
-    print(f"Tempo total de processamento: {total_time:.2f} segundos.")
+
+    resultado = gerar_string_resultados(top_50_temperature, top_50_humidity, top_50_luminosity, total_time)
+
+    return resultado

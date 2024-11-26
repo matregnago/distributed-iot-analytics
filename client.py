@@ -1,17 +1,16 @@
 import socket
 import pickle
 
-data_payload = 2048
+data_payload = 4096
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 address = "localhost"
-port = 7270 
+port = 7270
 server_address = (address, port)
 
 print("Conectando-se ao servidor...")
 sock.connect(server_address)
 
 print(f"Conectado ao servidor {address}:{port}!")
-
 
 while True:
     file_name = input("Digite o caminho para o arquivo CSV: ")
@@ -64,8 +63,15 @@ try:
             tupla_para_enviar = (option, n_threads)
             data = pickle.dumps(tupla_para_enviar)
             sock.sendall(data)
-            response = sock.recv(data_payload).decode()
-            print(f"Resposta do servidor: {response}")
+            response = sock.recv(data_payload).decode('utf-8').strip()
+            tamanho = int(response)
+            received_string = b''
+            while len(received_string) < tamanho:
+                chunk = sock.recv(data_payload)
+                received_string += chunk
+            
+            print(received_string.decode())
+
         else:
             print("Digite uma opção válida.")
             continue

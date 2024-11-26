@@ -1,95 +1,218 @@
-import csv
 import time
-from lib import exibir_maiores_intervalos, calcular_diferenca_datas
-from device import Device, Sensor
+from collections import defaultdict
+import csv
+import datetime
 
-devices = {}
-
-temperature_intervals = []
-humidity_intervals = []
-luminosity_intervals = []
-
-def register_row(row):
-    if '' in row:
-        return
-    device_name = row[1]
-    current_date = row[3]
-    temperature = float(row[4])
-    humidity = float(row[5])
-    luminosity = float(row[6])
-    
-    if device_name not in devices:
-        temperature_sensor = Sensor(temperature, current_date, current_date)
-        humidity_sensor = Sensor(humidity, current_date, current_date)
-        luminosity_sensor = Sensor(luminosity, current_date, current_date)
-        devices[device_name] = Device(temperature_sensor, humidity_sensor, luminosity_sensor)
-    
-    else:
-        device = devices[device_name]
+def exibir_maiores_intervalos(intervalos, sensor_tipo):
+    intervalos_ordenados = sorted(intervalos, key=lambda x: x['interval_time'], reverse=True)
+    resultado = f"Top 50 maiores intervalos para {sensor_tipo}:\n"
+    i = 1
+    for intervalo in intervalos_ordenados[:50]:
+        device = intervalo['device']
+        value = intervalo['value']
+        interval_start_date = intervalo['interval_start_date']
+        interval_end_date = intervalo['interval_end_date']
+        interval_time = intervalo['interval_time']
         
-        # Atualização para sensor de temperatura
-        if device.temperature.value == temperature:
-            device.temperature.interval_end_date = current_date
-        else:
-            interval = calcular_diferenca_datas(device.temperature.interval_start_date, device.temperature.interval_end_date)
+        resultado += f"{i} Travamento:\n"
+        resultado += f"  Dispositivo: {device}\n"
+        resultado += f"  Valor: {value}\n"
+        resultado += f"  Data Inicial: {interval_start_date}\n"
+        resultado += f"  Data Final: {interval_end_date}\n"
+        resultado += f"  Duração: {interval_time}\n\n"
+        i += 1
+    return resultado
+
+def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, intervalos_luminosidade, tempo_total):
+    # Exibir os intervalos e combinar com o tempo total
+    resultado_temperatura = exibir_maiores_intervalos(intervalos_temperatura, "temperatura")
+    resultado_umidade = exibir_maiores_intervalos(intervalos_umidade, "umidade")
+    resultado_luminosidade = exibir_maiores_intervalos(intervalos_luminosidade, "luminosidade")
+
+    # Montando a string final com todas as informações
+    resultado_completo = f"{resultado_temperatura}\n{resultado_umidade}\n{resultado_luminosidade}"
+    resultado_completo += f"\nTempo total de processamento: {tempo_total:.2f} segundos.\n"
+    
+    return resultado_completo
+
+def calcular_diferenca_datas(datainicial, datafinal):
+    formatos_data = ["%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"]  # Formatos com e sem microssegundos
+    
+    for formato in formatos_data:
+        try:
+            dt_inicial = datetime.datetime.strptime(datainicial, formato)
+            dt_final = datetime.datetime.strptime(datafinal, formato)
+            return dt_final - dt_inicial  # Retorna a diferença em timedelta
+        except ValueError:
+            continue
+    
+    try:
+        if "." not in datainicial:
+            datainicial += ".000000"
+        if "." not in datafinal:
+            datafinal += ".000000"
+        
+        dt_inicial = datetime.datetime.strptime(datainicial, "%Y-%m-%d %H:%M:%S.%f")
+        dt_final = datetime.datetime.strptime(datafinal, "%Y-%m-%d %H:%M:%S.%f")
+        return dt_final - dt_inicial  # Retorna a diferença em timedelta
+    except ValueError:
+        raise ValueError(f"Formato de data inválido para as datas: {datainicial} ou {datafinal}")
+
+
+
+def cria_estrutura_devices(filename):
+    devices_data = defaultdict(list)
+    with open(filename, mode='r', newline='', encoding='utf-8') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter='|')
+        next(csv_reader)
+        for row in csv_reader:
+            device_name = row[1]
+            data_medicao = row[3]
+            if not(row[4]) or not(row[5]) or not(row[6]):
+                 continue
+            temperatura = float(row[4])
+            umidade = float(row[5])
+            luminosidade = float(row[6])
+            
+            devices_data[device_name].append({
+                "data": data_medicao,
+                "temperatura": temperatura,
+                "umidade": umidade,
+                "luminosidade": luminosidade
+            })
+    return devices_data
+
+
+def process_device_data(device_name, measurements):
+    temperature_intervals = []
+    humidity_intervals = []
+    luminosity_intervals = []
+      
+    if measurements:
+        prev_temp = measurements[0]["temperatura"]
+        prev_hum = measurements[0]["umidade"]
+        prev_lum = measurements[0]["luminosidade"]
+        
+        temp_start_data = measurements[0]["data"]
+        hum_start_data = measurements[0]["data"]
+        lum_start_data = measurements[0]["data"]
+        
+        for i in range(1, len(measurements)):
+            current_meas = measurements[i]
+            # temperatura
+            if current_meas["temperatura"] != prev_temp:
+                interval = calcular_diferenca_datas(temp_start_data, measurements[i-1]["data"])
+                temperature_intervals.append({
+                    "device": device_name,
+                    "value": prev_temp,
+                    "interval_start_date": temp_start_data,
+                    "interval_end_date": measurements[i-1]["data"],
+                    "interval_time": interval
+                })
+                prev_temp = current_meas["temperatura"]
+                temp_start_data = current_meas["data"]
+                
+            # umidade
+            if current_meas["umidade"] != prev_hum:
+                interval = calcular_diferenca_datas(hum_start_data, measurements[i-1]["data"])
+                humidity_intervals.append({
+                    "device": device_name,
+                    "value": prev_hum,
+                    "interval_start_date": hum_start_data,
+                    "interval_end_date": measurements[i-1]["data"],
+                    "interval_time": interval
+                })
+                prev_hum = current_meas["umidade"]
+                hum_start_data = current_meas["data"]
+                
+            # luminosidade
+            if current_meas["luminosidade"] != prev_lum:
+                interval = calcular_diferenca_datas(lum_start_data, measurements[i-1]["data"])
+                luminosity_intervals.append({
+                    "device": device_name,
+                    "value": prev_lum,
+                    "interval_start_date": lum_start_data,
+                    "interval_end_date": measurements[i-1]["data"],
+                    "interval_time": interval
+                })
+                prev_lum = current_meas["luminosidade"]
+                lum_start_data = current_meas["data"]
+        
+        # Fechar intervalos após a última medição
+        last_meas = measurements[-1]
+        if prev_temp is not None:
+            interval = calcular_diferenca_datas(temp_start_data, last_meas["data"])
             temperature_intervals.append({
                 "device": device_name,
-                "value": device.temperature.value,
-                "interval_start_date": device.temperature.interval_start_date,
-                "interval_end_date": device.temperature.interval_end_date,
+                "value": prev_temp,
+                "interval_start_date": temp_start_data,
+                "interval_end_date": last_meas["data"],
                 "interval_time": interval
             })
-            device.temperature.value = temperature
-            device.temperature.interval_start_date = current_date
-            device.temperature.interval_end_date = current_date
-        
-        # Atualização para sensor de umidade
-        if device.humidity.value == humidity:
-            device.humidity.interval_end_date = current_date
-        else:
-            interval = calcular_diferenca_datas(device.humidity.interval_start_date, device.humidity.interval_end_date)
+        if prev_hum is not None:
+            interval = calcular_diferenca_datas(hum_start_data, last_meas["data"])
             humidity_intervals.append({
                 "device": device_name,
-                "value": device.humidity.value,
-                "interval_start_date": device.humidity.interval_start_date,
-                "interval_end_date": device.humidity.interval_end_date,
+                "value": prev_hum,
+                "interval_start_date": hum_start_data,
+                "interval_end_date": last_meas["data"],
                 "interval_time": interval
             })
-            device.humidity.value = humidity
-            device.humidity.interval_start_date = current_date
-            device.humidity.interval_end_date = current_date
-        
-        # Atualização para sensor de luminosidade
-        if device.luminosity.value == luminosity:
-            device.luminosity.interval_end_date = current_date
-        else:
-            interval = calcular_diferenca_datas(device.luminosity.interval_start_date, device.luminosity.interval_end_date)
+        if prev_lum is not None:
+            interval = calcular_diferenca_datas(lum_start_data, last_meas["data"])
             luminosity_intervals.append({
                 "device": device_name,
-                "value": device.luminosity.value,
-                "interval_start_date": device.luminosity.interval_start_date,
-                "interval_end_date": device.luminosity.interval_end_date,
+                "value": prev_lum,
+                "interval_start_date": lum_start_data,
+                "interval_end_date": last_meas["data"],
                 "interval_time": interval
             })
-            device.luminosity.value = luminosity
-            device.luminosity.interval_start_date = current_date
-            device.luminosity.interval_end_date = current_date
+    
+    return (temperature_intervals, humidity_intervals, luminosity_intervals)
 
-initial_time = time.time()
+def get_top_50_intervals(intervals):
+    # Ordena os intervalos pelo tempo do intervalo (interval_time) em ordem decrescente
+    sorted_intervals = sorted(intervals, key=lambda x: x["interval_time"], reverse=True)
+    return sorted_intervals[:50]
 
-# Leitura do arquivo CSV
-with open("devices.csv", mode='r', newline='', encoding='utf-8') as csv_file:
-    csv_reader = csv.reader(csv_file)
-    next(csv_reader)
-    for line in csv_reader:
-        row = line[0].split('|')
-        register_row(row)
+def sequencial():
+    initial_time = time.time()
+    intervalos_temperatura = []
+    intervalos_umidade = []
+    intervalos_luminosidade = []
+    devices_data = cria_estrutura_devices("dados_recebidos.csv")
 
-final_time = time.time()
+    # Exemplo em um algoritmo paralelo
+    # n_processes = 28
+    # chunks = gerar_chunks(devices_data, n_processes)
 
-exibir_maiores_intervalos(temperature_intervals, "temperatura")
-exibir_maiores_intervalos(humidity_intervals, "umidade")
-exibir_maiores_intervalos(luminosity_intervals, "luminosidade")
+    # first_chunk = chunks[0]                       # Primeiro chunk
+    # first_device = next(iter(first_chunk))        # Primeiro device
+    # first_reading = first_chunk[first_device][0]  # Primeira leitura do primeiro device
+    
+    # for chunk in chunks:
+    #     for device in iter(chunk):
+    #         temperature_intervals, humidity_intervals, luminosity_intervals = process_device_data(device, chunk[device])
+    #         intervalos_temperatura.extend(temperature_intervals)
+    #         intervalos_umidade.extend(humidity_intervals)
+    #         intervalos_luminosidade.extend(luminosity_intervals)
+    
+    for device in iter(devices_data):
+        temperature_intervals, humidity_intervals, luminosity_intervals = process_device_data(device, devices_data[device])
+        intervalos_temperatura.extend(temperature_intervals)
+        intervalos_umidade.extend(humidity_intervals)
+        intervalos_luminosidade.extend(luminosity_intervals)
 
-total_time = final_time - initial_time
-print(f"{total_time:.2f}")
+
+    top_50_temperature = get_top_50_intervals(intervalos_temperatura)
+    top_50_humidity = get_top_50_intervals(intervalos_umidade)
+    top_50_luminosity = get_top_50_intervals(intervalos_luminosidade)
+    final_time = time.time()
+
+    total_time = final_time - initial_time
+
+    resultado = gerar_string_resultados(top_50_temperature, top_50_humidity, top_50_luminosity, total_time)
+    return resultado
+
+
+    
