@@ -5,16 +5,17 @@ from dask.distributed import Client
 import pandas as pd
 import time
 
+
+
+
 def exibir_maiores_intervalos(intervalos, sensor_tipo):
-    intervalos_ordenados = sorted(intervalos, key=lambda x: x['interval_time'], reverse=True)
     resultado = f"Top 50 maiores intervalos para {sensor_tipo}:\n"
-    i = 1
-    for intervalo in intervalos_ordenados[:50]:
-        device = intervalo['device']
-        value = intervalo['value']
-        interval_start_date = intervalo['interval_start_date']
-        interval_end_date = intervalo['interval_end_date']
-        interval_time = intervalo['interval_time']
+    for i, intervalo in enumerate(intervalos.head(50).itertuples(), start=1):
+        device = intervalo.dispositivo
+        value = intervalo.valor
+        interval_start_date = intervalo.inicio
+        interval_end_date = intervalo.fim
+        interval_time = intervalo.duracao
         
         resultado += f"{i} Travamento:\n"
         resultado += f"  Dispositivo: {device}\n"
@@ -22,7 +23,6 @@ def exibir_maiores_intervalos(intervalos, sensor_tipo):
         resultado += f"  Data Inicial: {interval_start_date}\n"
         resultado += f"  Data Final: {interval_end_date}\n"
         resultado += f"  Duração: {interval_time}\n\n"
-        i += 1
     return resultado
 
 def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, intervalos_luminosidade, tempo_total):
@@ -73,13 +73,13 @@ def encontrar_top_50(df, sensor_coluna):
     intervalos = intervalos.sort_values('duracao', ascending=False).head(50)
     return intervalos
 
-
-def dask_paralelizacao(n_threads):
-    initial_time = time.time()
+def dask_parallel(nprocess):
+    num_process = int(nprocess)
     dask.config.set({'distributed.worker.threads': 4})  # Número de threads por worker
-    dask.config.set({'distributed.worker.nprocs': n_threads})  # Número de processos
+    dask.config.set({'distributed.worker.nprocs': num_process})  # Número de processos
+
     # Leitura do arquivo CSV sem parse_dates
-    df = dd.read_csv('dados_recebidos.csv', sep='|', na_values=[''], dtype={
+    df = dd.read_csv('devices.csv', sep='|', na_values=[''], dtype={
         'device': 'object',
         'temperatura': 'float64',
         'umidade': 'float64',
@@ -92,6 +92,9 @@ def dask_paralelizacao(n_threads):
 
     df = df.dropna(subset=['device', 'data', 'temperatura', 'umidade', 'luminosidade'],) 
 
+
+    initial_time = time.time()
+
     # Encontrar os 50 maiores intervalos para cada sensor
     top_50_temperatura = encontrar_top_50(df, 'temperatura')
     top_50_umidade = encontrar_top_50(df, 'umidade')
@@ -100,6 +103,9 @@ def dask_paralelizacao(n_threads):
     final_time = time.time()
 
     total_time = final_time - initial_time
-
-    resultado = gerar_string_resultados(top_50_temperatura, top_50_umidade, top_50_luminosidade, total_time)
+    # Exibir os resultados
+    exibir_maiores_intervalos(top_50_temperatura, "temperatura")
+    exibir_maiores_intervalos(top_50_umidade, "umidade")
+    exibir_maiores_intervalos(top_50_luminosidade, "luminosidade")
+    resultado = gerar_string_resultados(top_50_temperatura, top_50_umidade, top_50_luminosidade, total_time) 
     return resultado

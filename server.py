@@ -2,7 +2,8 @@ import socket
 import pickle
 from sequencial import sequencial
 from multiproc import multiproc
-
+from daskk import dask_parallel
+from openmp import openmp_paralel
 host = "localhost"
 port = 7270
 data_payload = 4096
@@ -60,8 +61,8 @@ def handle_client(client, address):
                     res_sequencial = sequencial()
                     enviar_string(res_sequencial, client)
                 case 2:
-                    msg = "Resultado Openmp Teste do srv"
-                    client.send(msg.encode())
+                    res_openmp = openmp_paralel(n_threads)
+                    enviar_string(res_openmp, client)
                 case 3:
                     res_multiproc = multiproc(n_threads)
                     enviar_string(res_multiproc, client)
@@ -69,8 +70,8 @@ def handle_client(client, address):
                     msg = "Resultado MPI Teste do srv"
                     client.send(msg.encode())
                 case 5:
-                    msg = "Resultado Dask Teste do srv"
-                    client.send(msg.encode())
+                    res_dask = dask_parallel(n_threads)
+                    enviar_string(res_dask, client)
                 case _:
                     message = "[Server]: Encerrando conexão com o cliente."
                     client.send(message.encode())

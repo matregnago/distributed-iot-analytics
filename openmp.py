@@ -46,18 +46,20 @@ def compile_and_run_c_program(source_file, output_file, input_argument, compiler
         result = subprocess.run(run_command, check=True, text=True, capture_output=True, env=env)
         print("Saída do programa:")
         print(result.stdout)
+        return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"Erro na execução: {e}")
         print("Saída de erro:")
         print(e.stderr)
 
 
-if __name__ == "__main__":
+def openmp_paralel(n_threads):
     # Defina os nomes dos arquivos e argumento
     source_file = "openmp.c"       # Nome do arquivo-fonte em C
     output_file = "openmp"         # Nome do executável gerado
     input_argument = "devices.csv" # Nome do arquivo CSV passado como argumento
-    numero_threads = 16             # Número de threads a serem usadas
+    numero_threads = int(n_threads)             # Número de threads a serem usadas
 
     # Chama a função para compilar e executar
-    compile_and_run_c_program(source_file, output_file, input_argument, numero_threads=numero_threads)
+    resposta = compile_and_run_c_program(source_file, output_file, input_argument, numero_threads=numero_threads)
+    return resposta
