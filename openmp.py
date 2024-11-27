@@ -53,7 +53,7 @@ def openmp_paralel(n_threads):
     # Defina os nomes dos arquivos e argumento
     source_file = "openmp.c"       # Nome do arquivo-fonte em C
     output_file = "openmp"         # Nome do executável gerado
-    input_argument = "devices.csv" # Nome do arquivo CSV passado como argumento
+    input_argument = "dados_recebidos.csv" # Nome do arquivo CSV passado como argumento
     numero_threads = int(n_threads)             # Número de threads a serem usadas
 
     # Chama a função para compilar e executar

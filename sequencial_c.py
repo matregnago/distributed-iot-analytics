@@ -49,7 +49,7 @@ def sequencial_c():
     # Defina os nomes dos arquivos e argumento
     source_file = "sequencial.c"       # Nome do arquivo-fonte em C
     output_file = "sequencial"         # Nome do executável gerado
-    input_argument = "devices.csv"     # Nome do arquivo CSV passado como argumento
+    input_argument = "dados_recebidos.csv"     # Nome do arquivo CSV passado como argumento
 
     # Chama a função para compilar e executar
     
