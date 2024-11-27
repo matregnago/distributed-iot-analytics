@@ -6,9 +6,9 @@ import time
 
 def exibir_maiores_intervalos(intervalos, sensor_tipo):
     intervalos_ordenados = sorted(intervalos, key=lambda x: x['interval_time'], reverse=True)
-    print(f"Top 5 maiores intervalos para {sensor_tipo}:")
+    print(f"Top 50 maiores intervalos para {sensor_tipo}:")
     i=1
-    for intervalo in intervalos_ordenados[:5]:
+    for intervalo in intervalos_ordenados[:50]:
         device = intervalo['device']
         value = intervalo['value']
         interval_start_date = intervalo['interval_start_date']
@@ -190,7 +190,7 @@ def main():
     initial_time = time.time()
 
     if rank == 0:
-        devices_data = cria_estrutura_devices("devices.csv")
+        devices_data = cria_estrutura_devices("dados_recebidos.csv")
         chunks = gerar_chunks(devices_data, n_processes)
     else:
         chunks = None
@@ -236,7 +236,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-    
-
-

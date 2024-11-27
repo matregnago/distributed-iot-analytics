@@ -23,11 +23,9 @@ def compile_and_run_c_program(source_file, output_file, input_argument, compiler
     # Comando de compilação
     compile_command = [compiler, "-fopenmp", "-o", output_file, source_file]
 
-    print(f"Compilando o programa '{source_file}'...")
     try:
         # Compila o programa
         subprocess.run(compile_command, check=True)
-        print("Compilação bem-sucedida!")
     except subprocess.CalledProcessError as e:
         print(f"Erro na compilação: {e}")
         return
@@ -37,12 +35,10 @@ def compile_and_run_c_program(source_file, output_file, input_argument, compiler
     # Comando de execução
     run_command = [f"./{output_file}", input_argument]
 
-    print(f"Executando o programa '{output_file}' com o argumento '{input_argument}'...")
     try:
         # Executa o programa com o número de threads definido
         result = subprocess.run(run_command, check=True, text=True, capture_output=True, env=env)
-        print("Saída do programa:")
-        print(result.stdout)
+        return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"Erro na execução: {e}")
         print("Saída de erro:")
@@ -56,4 +52,6 @@ def sequencial_c():
     input_argument = "devices.csv"     # Nome do arquivo CSV passado como argumento
 
     # Chama a função para compilar e executar
-    compile_and_run_c_program(source_file, output_file, input_argument)
+    
+    resposta = compile_and_run_c_program(source_file, output_file, input_argument)
+    return resposta

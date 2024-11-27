@@ -79,7 +79,7 @@ def dask_parallel(nprocess):
     dask.config.set({'distributed.worker.nprocs': num_process})  # Número de processos
 
     # Leitura do arquivo CSV sem parse_dates
-    df = dd.read_csv('devices.csv', sep='|', na_values=[''], dtype={
+    df = dd.read_csv('dados_recebidos.csv', sep='|', na_values=[''], dtype={
         'device': 'object',
         'temperatura': 'float64',
         'umidade': 'float64',

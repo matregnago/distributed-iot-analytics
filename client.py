@@ -7,6 +7,17 @@ address = "localhost"
 port = 7270
 server_address = (address, port)
 
+def receive_dynamic_data(sock):
+    # Receber primeiro o tamanho dos dados
+    data = sock.recv(data_payload)
+    data_length = pickle.loads(data)  # Tamanho dos dados
+    received_data = b''
+    while len(received_data) < data_length:
+        chunk = sock.recv(data_payload)
+        received_data += chunk
+
+    return received_data.decode()
+
 print("Conectando-se ao servidor...")
 sock.connect(server_address)
 
@@ -70,14 +81,8 @@ try:
             data = pickle.dumps(tupla_para_enviar)
             sock.sendall(data)
 
-            # Receber e processar resposta do servidor
-            tamanho = 28029
-            received_string = b''
-            while len(received_string) < tamanho:
-                chunk = sock.recv(data_payload)
-                received_string += chunk
-
-            print(received_string.decode())
+            received_string = receive_dynamic_data(sock)
+            print(received_string)
         else:
             print("Digite uma opção válida.")
             continue
