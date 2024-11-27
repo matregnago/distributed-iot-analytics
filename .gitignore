@@ -6,3 +6,5 @@ __pycache__
 output.csv
 dados_recebidos.csv
 .vscode
+sequencial
+openmp
