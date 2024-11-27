@@ -60,7 +60,7 @@ try:
             break
         elif option in [1, 2, 3, 4, 5, 6]:
             n_threads = 0
-            if option > 1:
+            if option > 2:
                 try:
                     n_threads = int(input("Digite o número de threads: "))
                 except ValueError:

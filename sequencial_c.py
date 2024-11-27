@@ -49,7 +49,7 @@ def compile_and_run_c_program(source_file, output_file, input_argument, compiler
         print(e.stderr)
 
 
-if __name__ == "__main__":
+def sequencial_c():
     # Defina os nomes dos arquivos e argumento
     source_file = "sequencial.c"       # Nome do arquivo-fonte em C
     output_file = "sequencial"         # Nome do executável gerado
