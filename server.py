@@ -4,6 +4,7 @@ from sequencial import sequencial
 from multiproc import multiproc
 from daskk import dask_parallel
 from openmp import openmp_paralel
+from sequencial_c import sequencial_c
 host = "localhost"
 port = 7270
 data_payload = 4096
@@ -61,15 +62,18 @@ def handle_client(client, address):
                     res_sequencial = sequencial()
                     enviar_string(res_sequencial, client)
                 case 2:
+                    res_sequencial_c = sequencial_c()
+                    enviar_string(res_sequencial_c, client)
+                case 3:
                     res_openmp = openmp_paralel(n_threads)
                     enviar_string(res_openmp, client)
-                case 3:
+                case 4:
                     res_multiproc = multiproc(n_threads)
                     enviar_string(res_multiproc, client)
-                case 4:
+                case 5:
                     msg = "Resultado MPI Teste do srv"
                     client.send(msg.encode())
-                case 5:
+                case 6:
                     res_dask = dask_parallel(n_threads)
                     enviar_string(res_dask, client)
                 case _:

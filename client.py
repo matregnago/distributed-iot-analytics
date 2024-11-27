@@ -40,10 +40,11 @@ try:
         print("\nMenu de paralelização")
         print("0. Encerrar conexão")
         print("1. Sequencial")
-        print("2. OpenMP (C)")
-        print("3. Multiprocessing")
-        print("4. MPI")
-        print("5. Dask")
+        print("2. Sequencial (C)")
+        print("3. OpenMP (C)")
+        print("4. Multiprocessing")
+        print("5. MPI")
+        print("6. Dask")
         option = input("Digite a sua opção: ")
 
         try:
@@ -57,7 +58,7 @@ try:
             sock.close()
             print("Finalizando programa.")
             break
-        elif option in [1, 2, 3, 4, 5]:
+        elif option in [1, 2, 3, 4, 5, 6]:
             n_threads = 0
             if option > 1:
                 try:
