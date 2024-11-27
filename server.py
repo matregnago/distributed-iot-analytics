@@ -6,6 +6,7 @@ from daskk import dask_parallel
 from openmp import openmp_paralel
 from sequencial_c import sequencial_c
 import subprocess
+import os
 
 host = "localhost"
 port = 7270
