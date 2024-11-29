@@ -1,10 +1,11 @@
 import dask
+from dask import config
 from dask import delayed
 import dask.dataframe as dd
-from dask.distributed import Client
+from dask.distributed import Client, LocalCluster
 import pandas as pd
 import time
-
+import logging
 
 
 
@@ -25,6 +26,7 @@ def exibir_maiores_intervalos(intervalos, sensor_tipo):
         resultado += f"  Duração: {interval_time}\n\n"
     return resultado
 
+
 def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, intervalos_luminosidade, tempo_total):
     # Exibir os intervalos e combinar com o tempo total
     resultado_temperatura = exibir_maiores_intervalos(intervalos_temperatura, "temperatura")
@@ -36,7 +38,6 @@ def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, interval
     resultado_completo += f"\nTempo total de processamento: {tempo_total:.2f} segundos.\n"
     
     return resultado_completo
-
 
 
 # Função para processar intervalos
@@ -59,6 +60,7 @@ def processar_intervalos_dispositivo(dispositivo_df, sensor_coluna):
     intervalos['dispositivo'] = dispositivo_df['device'].iloc[0]
     return intervalos
 
+
 # Função para encontrar os 50 maiores intervalos
 def encontrar_top_50(df, sensor_coluna):
     # Processa cada dispositivo separadamente
@@ -69,43 +71,68 @@ def encontrar_top_50(df, sensor_coluna):
     )
     
     # Ordena pelos maiores intervalos
+    intervalos = intervalos.persist()  # Usar persist para manter os dados na memória
     intervalos = intervalos.compute()
     intervalos = intervalos.sort_values('duracao', ascending=False).head(50)
     return intervalos
 
-def dask_parallel(nprocess):
-    num_process = int(nprocess)
-    dask.config.set({'distributed.worker.threads': 4})  # Número de threads por worker
-    dask.config.set({'distributed.worker.nprocs': num_process})  # Número de processos
 
-    # Leitura do arquivo CSV sem parse_dates
+def dask_parallel(number):
+    logging.basicConfig(level=logging.ERROR)  # Reduz todos os logs para 'ERROR'
+    logging.getLogger('distributed.shuffle._scheduler_plugin').setLevel(logging.ERROR)  # Ajuste para o shuffle
+    nthreads = int(number)
+    nworkers = int(number)
+    
+    # Configuração do Dask: criando um LocalCluster com o número de workers e threads definidos
+    cluster = LocalCluster(n_workers=nworkers, threads_per_worker=nthreads)
+    client = Client(cluster)
+
+    # Forçar o uso de pickle para comunicação entre os workers
+    config.set({'distributed.protocol': 'pickle'})  
+
+    # Leitura do arquivo CSV com tamanho de bloco ajustado
     df = dd.read_csv('dados_recebidos.csv', sep='|', na_values=[''], dtype={
         'device': 'object',
         'temperatura': 'float64',
         'umidade': 'float64',
         'luminosidade': 'float64',
         'data': 'object'  # Leia como string inicialmente
-    })
+    }, blocksize=10e6)  # Menor que 25MB, para tentar reduzir a carga nas partições
+
+    # Calcular o tamanho total da memória após a leitura dos dados
+    total_size = df.memory_usage(deep=True).sum().compute()  # Tamanho total dos dados
+    num_partitions = max(10, total_size // (25 * 1024**2))  # Ajuste a quantidade de partições
+    df = df.repartition(npartitions=num_partitions)
 
     # Conversão manual da coluna 'data' para datetime
     df['data'] = dd.to_datetime(df['data'], errors='coerce')
 
-    df = df.dropna(subset=['device', 'data', 'temperatura', 'umidade', 'luminosidade'],) 
+    df = df.dropna(subset=['device', 'data', 'temperatura', 'umidade', 'luminosidade'])
 
+    # Ajustar o número de partições dinamicamente
+    num_partitions = max(10, int(df.npartitions * 0.75))  # Ajustar para 75% das partições originais
+    df = df.repartition(npartitions=num_partitions)
 
     initial_time = time.time()
 
     # Encontrar os 50 maiores intervalos para cada sensor
-    top_50_temperatura = encontrar_top_50(df, 'temperatura')
-    top_50_umidade = encontrar_top_50(df, 'umidade')
-    top_50_luminosidade = encontrar_top_50(df, 'luminosidade')
+    top_50_temperatura = encontrar_top_50(df[['device', 'data', 'temperatura']], 'temperatura')
+    top_50_umidade = encontrar_top_50(df[['device', 'data', 'umidade']], 'umidade')
+    top_50_luminosidade = encontrar_top_50(df[['device', 'data', 'luminosidade']], 'luminosidade')
 
     final_time = time.time()
 
     total_time = final_time - initial_time
+    
     # Exibir os resultados
     exibir_maiores_intervalos(top_50_temperatura, "temperatura")
     exibir_maiores_intervalos(top_50_umidade, "umidade")
     exibir_maiores_intervalos(top_50_luminosidade, "luminosidade")
-    resultado = gerar_string_resultados(top_50_temperatura, top_50_umidade, top_50_luminosidade, total_time) 
+    
+    resultado = gerar_string_resultados(top_50_temperatura, top_50_umidade, top_50_luminosidade, total_time)
+
+    # Fechar o cliente e o cluster ao final
+    client.close()
+    cluster.close()
+
     return resultado
