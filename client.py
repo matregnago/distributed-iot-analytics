@@ -7,6 +7,30 @@ address = "localhost"
 port = 7270
 server_address = (address, port)
 
+def receive_dynamic_data(sock):
+    # Receber primeiro o tamanho dos dados
+    data = sock.recv(data_payload)
+    if not data:
+        return ""
+    
+    data_length = pickle.loads(data)  # Tamanho dos dados
+
+    received_data = b''  # Variável para armazenar os dados recebidos
+
+    while len(received_data) < data_length:
+        # Recebe os dados em pedaços
+        chunk = sock.recv(data_payload)
+        if not chunk:
+            print("[Client]: Conexão perdida antes de receber todos os dados.")
+            break
+        received_data += chunk
+        if b"EOF" in received_data:
+            received_data = received_data.replace(b"EOF", b"") 
+            break
+
+    return received_data.decode()  # Retorna os dados completos como string
+
+
 print("Conectando-se ao servidor...")
 sock.connect(server_address)
 
@@ -70,14 +94,8 @@ try:
             data = pickle.dumps(tupla_para_enviar)
             sock.sendall(data)
 
-            # Receber e processar resposta do servidor
-            tamanho = 28029
-            received_string = b''
-            while len(received_string) < tamanho:
-                chunk = sock.recv(data_payload)
-                received_string += chunk
-
-            print(received_string.decode())
+            received_string = receive_dynamic_data(sock)
+            print(received_string)
         else:
             print("Digite uma opção válida.")
             continue
@@ -87,3 +105,4 @@ except KeyboardInterrupt:
 finally:
     print("Encerrando a conexão com o servidor...")
     sock.close()
+
