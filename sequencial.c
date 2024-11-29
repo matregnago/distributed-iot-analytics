@@ -149,6 +149,10 @@ void process_intervals(Reading *readings, int num_readings, Interval **intervals
 }
 
 int main(int argc, char *argv[]) {
+    clock_t start, end;
+    double duration;
+
+    start = clock();
 
     if (argc < 2) {
         printf("Usage: %s <input_file>\n", argv[0]);
@@ -270,8 +274,9 @@ int main(int argc, char *argv[]) {
     qsort(humidity_intervals, num_humidity_intervals, sizeof(Interval), compare_intervals);
     qsort(luminosity_intervals, num_luminosity_intervals, sizeof(Interval), compare_intervals);
 
-    // Display top 50 temperature intervals
+    // Display top 50 temperature intervals,
     int top_n = num_temp_intervals < 50 ? num_temp_intervals : 50;
+
     printf("\nTop %d maiores intervalos para temperatura:\n", top_n);
     for (int i = 0; i < top_n; i++) {
         Interval *interval = &temp_intervals[i];
@@ -308,6 +313,14 @@ int main(int argc, char *argv[]) {
         printf("%d Travamento\n Dispositivo: %s\n Valor: %.2f\n Início: %s\n Fim: %s\n Duração: %.2f segundos\n",
             i+1, interval->device_name, interval->value, start_str, end_str, interval->duration);
     }
+
+    end = clock();
+
+        // Calculando a duração em segundos
+    duration = ((double)(end - start)) / CLOCKS_PER_SEC;
+    // Exibe os top 50 intervalos de temperatura
+
+    printf("\nTempo total de processamento: %.2f segundos.\n", duration);
 
     // Free memory
     for (int i = 0; i < num_devices; i++) {

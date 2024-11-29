@@ -6,7 +6,6 @@
 #include <time.h>
 
 
-
 typedef struct {
     double timestamp; // segundos desde o epoch
     double value;     // valor da leitura
@@ -152,7 +151,10 @@ void process_intervals(Reading *readings, int num_readings, Interval **intervals
 }
 
 int main(int argc, char *argv[]) {
+    clock_t start, end;
+    double duration;
 
+    start = clock();
     if (argc < 2) {
         printf("Uso: %s <arquivo_entrada> [num_threads]\n", argv[0]);
         return 1;
@@ -338,8 +340,8 @@ int main(int argc, char *argv[]) {
     qsort(temp_intervals, num_temp_intervals, sizeof(Interval), compare_intervals);
     qsort(humidity_intervals, num_humidity_intervals, sizeof(Interval), compare_intervals);
     qsort(luminosity_intervals, num_luminosity_intervals, sizeof(Interval), compare_intervals);
+    // Fim da contagem do tempo
 
-    // Exibe os top 50 intervalos de temperatura
     int top_n = num_temp_intervals < 50 ? num_temp_intervals : 50;
     printf("\nTop %d maiores intervalos para temperatura:\n", top_n);
     for (int i = 0; i < top_n; i++) {
@@ -377,7 +379,13 @@ int main(int argc, char *argv[]) {
         printf("%d Travamento\n Dispositivo: %s\n Valor: %.2f\n Início: %s\n Fim: %s\n Duração: %.2f segundos\n",
             i+1, interval->device_name, interval->value, start_str, end_str, interval->duration);
     }
+    end = clock();
 
+        // Calculando a duração em segundos
+    duration = ((double)(end - start)) / CLOCKS_PER_SEC;
+    // Exibe os top 50 intervalos de temperatura
+
+    printf("\nTempo total de processamento: %.2f segundos.\n", duration);
     // Libera a memória
     for (int i = 0; i < num_devices; i++) {
         free(devices[i].device_name);
