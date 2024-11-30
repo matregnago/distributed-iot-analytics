@@ -30,24 +30,23 @@ def compile_and_run_c_program(source_file, output_file, input_argument, compiler
     except subprocess.CalledProcessError as e:
         print(f"Erro na compilação: {e}")
         return
-
-    # Configura a variável de ambiente para o número de threads
-    env = os.environ.copy()
-    env["OMP_NUM_THREADS"] = str(numero_threads)
+    input_argument = str(numero_threads) + " " + input_argument
 
     # Comando de execução
     run_command = [f"./{output_file}", input_argument]
 
     try:
         # Executa o programa com o número de threads definido
-        result = subprocess.run(run_command, check=True, text=True, capture_output=True, env=env)
+        result = subprocess.run(run_command, check=True, text=True, capture_output=True)
+        print("Saída do programa:")
         print(result.stdout)
         return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"Erro na execução: {e}")
         print("Saída de erro:")
-        print(e.stderr)
-
+        if e.stderr:
+            print(e.stderr)
+        return None
 
 def openmp_paralel(n_threads):
     # Defina os nomes dos arquivos e argumento
