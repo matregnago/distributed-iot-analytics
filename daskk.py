@@ -80,7 +80,7 @@ def encontrar_top_50(df, sensor_coluna):
 def dask_parallel(number):
     logging.basicConfig(level=logging.ERROR)  # Reduz todos os logs para 'ERROR'
     logging.getLogger('distributed.shuffle._scheduler_plugin').setLevel(logging.ERROR)  # Ajuste para o shuffle
-    nthreads = int(number)
+    nthreads = int = 1
     nworkers = int(number)
     
     # Configuração do Dask: criando um LocalCluster com o número de workers e threads definidos
