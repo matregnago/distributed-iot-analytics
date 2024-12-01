@@ -99,7 +99,7 @@ def process_device_data(device_name, measurements):
         
         for i in range(1, len(measurements)):
             current_meas = measurements[i]
-            # temperatura
+            # Temperatura
             if current_meas["temperatura"] != prev_temp:
                 interval = calcular_diferenca_datas(temp_start_data, measurements[i-1]["data"])
                 temperature_intervals.append({
@@ -112,7 +112,7 @@ def process_device_data(device_name, measurements):
                 prev_temp = current_meas["temperatura"]
                 temp_start_data = current_meas["data"]
                 
-            # umidade
+            # Umidade
             if current_meas["umidade"] != prev_hum:
                 interval = calcular_diferenca_datas(hum_start_data, measurements[i-1]["data"])
                 humidity_intervals.append({
@@ -125,7 +125,7 @@ def process_device_data(device_name, measurements):
                 prev_hum = current_meas["umidade"]
                 hum_start_data = current_meas["data"]
                 
-            # luminosidade
+            # Luminosidade
             if current_meas["luminosidade"] != prev_lum:
                 interval = calcular_diferenca_datas(lum_start_data, measurements[i-1]["data"])
                 luminosity_intervals.append({
@@ -138,7 +138,6 @@ def process_device_data(device_name, measurements):
                 prev_lum = current_meas["luminosidade"]
                 lum_start_data = current_meas["data"]
         
-        # Fechar intervalos após a última medição
         last_meas = measurements[-1]
         if prev_temp is not None:
             interval = calcular_diferenca_datas(temp_start_data, last_meas["data"])
@@ -171,7 +170,6 @@ def process_device_data(device_name, measurements):
     return (temperature_intervals, humidity_intervals, luminosity_intervals)
 
 def get_top_50_intervals(intervals):
-    # Ordena os intervalos pelo tempo do intervalo (interval_time) em ordem decrescente
     sorted_intervals = sorted(intervals, key=lambda x: x["interval_time"], reverse=True)
     return sorted_intervals[:50]
 

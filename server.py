@@ -14,7 +14,7 @@ data_payload = 4096
 
 
 def exec_mpi(n_threads):
-    run_command = ["mpiexec", "-n", str(n_threads), "-f", "hosts.txt", "python3", "mpi.py"]
+    run_command = ["mpiexec", "-n", str(n_threads), "python3", "mpi.py"]
     try:
         result = subprocess.run(run_command, check=True, text=True, capture_output=True)
         print(result.stdout)
@@ -27,16 +27,14 @@ def exec_mpi(n_threads):
 def enviar_string(string, client):       
     # Envia primeiro o tamanho da string
     string_length = len(string)
-    client.sendall(pickle.dumps(string_length))  # Envia o tamanho do conteúdo
+    client.send(pickle.dumps(string_length))
     
     total_sent = 0  # Variável para controlar o envio
     while total_sent < string_length:
-        # Envia os dados em blocos de data_payload
         sent = client.send(string[total_sent:total_sent + data_payload].encode())
         total_sent += sent  # Atualiza a quantidade de dados enviados
-    
-    # Envia um marcador de fim após todos os dados
-    client.sendall(b"EOF")  # Sinal de fim de transmissão
+
+    client.send(b"EOF")  # Sinal de fim de transmissão
     print("[Server]: Dados enviados com sucesso!")
 
 
@@ -48,16 +46,13 @@ def start_server():
     return sock
 
 def handle_client(client, address):
-    
-        # Receber arquivo CSV
         with open("dados_recebidos.csv", 'wb') as csv_output_file:
             print("[Server]: Iniciando recepção do arquivo...")
             while True:
                 data = client.recv(data_payload)
-                if not data:  # Conexão encerrada
+                if not data:  # Acabou o arquivo
                     break
                 if b"EOF" in data:  # Detecta o marcador de fim no bloco
-                    # Escreve tudo antes do EOF
                     csv_output_file.write(data.replace(b"EOF", b""))
                     print("[Server]: Final do arquivo recebido.")
                     break
@@ -69,7 +64,6 @@ def handle_client(client, address):
         success_message = "[Server]: Arquivo recebido com sucesso!"
         client.send(success_message.encode())
 
-        # Continuar com a lógica adicional do servidor
         while True:
             data = client.recv(data_payload)
             if not data:

@@ -28,7 +28,6 @@ def exibir_maiores_intervalos(intervalos, sensor_tipo):
 
 
 def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, intervalos_luminosidade, tempo_total):
-    # Exibir os intervalos e combinar com o tempo total
     resultado_temperatura = exibir_maiores_intervalos(intervalos_temperatura, "temperatura")
     resultado_umidade = exibir_maiores_intervalos(intervalos_umidade, "umidade")
     resultado_luminosidade = exibir_maiores_intervalos(intervalos_luminosidade, "luminosidade")
@@ -40,7 +39,6 @@ def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, interval
     return resultado_completo
 
 
-# Função para processar intervalos
 def processar_intervalos_dispositivo(dispositivo_df, sensor_coluna):
     dispositivo_df = dispositivo_df.sort_values('data')
     dispositivo_df['mudou'] = dispositivo_df[sensor_coluna] != dispositivo_df[sensor_coluna].shift()
@@ -61,17 +59,14 @@ def processar_intervalos_dispositivo(dispositivo_df, sensor_coluna):
     return intervalos
 
 
-# Função para encontrar os 50 maiores intervalos
 def encontrar_top_50(df, sensor_coluna):
-    # Processa cada dispositivo separadamente
     intervalos = df.groupby('device').apply(
         processar_intervalos_dispositivo,
         sensor_coluna=sensor_coluna,
         meta={'valor': 'float64', 'inicio': 'datetime64[ns]', 'fim': 'datetime64[ns]', 'duracao': 'timedelta64[ns]', 'dispositivo': 'object'}
     )
     
-    # Ordena pelos maiores intervalos
-    intervalos = intervalos.persist()  # Usar persist para manter os dados na memória
+    intervalos = intervalos.persist()
     intervalos = intervalos.compute()
     intervalos = intervalos.sort_values('duracao', ascending=False).head(50)
     return intervalos
@@ -83,23 +78,21 @@ def dask_parallel(number):
     nthreads = 1
     nworkers = int(number)
     
-    # Configuração do Dask: criando um LocalCluster com o número de workers e threads definidos
     cluster = LocalCluster(n_workers=nworkers, threads_per_worker=nthreads)
     client = Client(cluster)
 
     # Forçar o uso de pickle para comunicação entre os workers
     config.set({'distributed.protocol': 'pickle'})  
 
-    # Leitura do arquivo CSV com tamanho de bloco ajustado
     df = dd.read_csv('dados_recebidos.csv', sep='|', na_values=[''], dtype={
         'device': 'object',
         'temperatura': 'float64',
         'umidade': 'float64',
         'luminosidade': 'float64',
-        'data': 'object'  # Leia como string inicialmente
-    }, blocksize=10e6)  # Menor que 25MB, para tentar reduzir a carga nas partições
+        'data': 'object'  
+    }, blocksize=10e6)  
 
-    # Calcular o tamanho total da memória após a leitura dos dados
+
     total_size = df.memory_usage(deep=True).sum().compute()  # Tamanho total dos dados
     num_partitions = max(10, total_size // (25 * 1024**2))  # Ajuste a quantidade de partições
     df = df.repartition(npartitions=num_partitions)
@@ -109,13 +102,12 @@ def dask_parallel(number):
 
     df = df.dropna(subset=['device', 'data', 'temperatura', 'umidade', 'luminosidade'])
 
-    # Ajustar o número de partições dinamicamente
     num_partitions = max(10, int(df.npartitions * 0.75))  # Ajustar para 75% das partições originais
     df = df.repartition(npartitions=num_partitions)
 
     initial_time = time.time()
 
-    # Encontrar os 50 maiores intervalos para cada sensor
+
     top_50_temperatura = encontrar_top_50(df[['device', 'data', 'temperatura']], 'temperatura')
     top_50_umidade = encontrar_top_50(df[['device', 'data', 'umidade']], 'umidade')
     top_50_luminosidade = encontrar_top_50(df[['device', 'data', 'luminosidade']], 'luminosidade')
@@ -124,14 +116,13 @@ def dask_parallel(number):
 
     total_time = final_time - initial_time
     
-    # Exibir os resultados
+
     exibir_maiores_intervalos(top_50_temperatura, "temperatura")
     exibir_maiores_intervalos(top_50_umidade, "umidade")
     exibir_maiores_intervalos(top_50_luminosidade, "luminosidade")
     
     resultado = gerar_string_resultados(top_50_temperatura, top_50_umidade, top_50_luminosidade, total_time)
 
-    # Fechar o cliente e o cluster ao final
     client.close()
     cluster.close()
 

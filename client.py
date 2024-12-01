@@ -8,7 +8,6 @@ port = 7270
 server_address = (address, port)
 
 def receive_dynamic_data(sock):
-    # Receber primeiro o tamanho dos dados
     data = sock.recv(data_payload)
     if not data:
         return ""
@@ -18,7 +17,6 @@ def receive_dynamic_data(sock):
     received_data = b''  # Variável para armazenar os dados recebidos
 
     while len(received_data) < data_length:
-        # Recebe os dados em pedaços
         chunk = sock.recv(data_payload)
         if not chunk:
             print("[Client]: Conexão perdida antes de receber todos os dados.")
@@ -28,7 +26,7 @@ def receive_dynamic_data(sock):
             received_data = received_data.replace(b"EOF", b"") 
             break
 
-    return received_data.decode()  # Retorna os dados completos como string
+    return received_data.decode()
 
 
 print("Conectando-se ao servidor...")
@@ -39,17 +37,17 @@ print(f"Conectado ao servidor {address}:{port}!")
 while True:
     file_name = input("Digite o caminho para o arquivo CSV: ")
     try:
-        with open(file_name, 'rb') as csv_input_file:  # Abrir em modo binário
+        with open(file_name, 'rb') as csv_input_file:  
             print(f"Iniciando envio do arquivo {file_name} ao servidor")
 
-            while chunk := csv_input_file.read(data_payload):  # Ler o arquivo em blocos de 4 KB
-                sock.sendall(chunk)  # Enviar cada bloco para o servidor
+            while chunk := csv_input_file.read(data_payload):  
+                sock.sendall(chunk) 
             
             sock.sendall(b"EOF")  # Enviar marcador indicando o fim do arquivo
 
             # Espera pela mensagem de sucesso do servidor
             msg_server_success = sock.recv(data_payload).decode()
-            print(msg_server_success)  # Certifique-se de que a mensagem é recebida corretamente
+            print(msg_server_success)
 
             break
 
@@ -57,8 +55,6 @@ while True:
         print(f"Arquivo {file_name} não encontrado. Verifique o caminho e tente novamente.")
         continue
 
-
-# Menu de interação após envio do arquivo
 try:
     while True:
         print("\nMenu de paralelização")
@@ -92,7 +88,7 @@ try:
                     continue
             tupla_para_enviar = (option, n_threads)
             data = pickle.dumps(tupla_para_enviar)
-            sock.sendall(data)
+            sock.send(data)
 
             received_string = receive_dynamic_data(sock)
             print(received_string)
