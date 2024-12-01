@@ -1,4 +1,4 @@
-# Projeto: Cliente-Servidor para Processamento de Dados IoT
+# Cliente-Servidor para Processamento de Dados IoT
 
 ## Objetivo
 
