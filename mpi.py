@@ -88,7 +88,7 @@ def process_device_data(device_name, measurements):
         
         for i in range(1, len(measurements)):
             current_meas = measurements[i]
-            # temperatura
+            # Temperatura
             if current_meas["temperatura"] != prev_temp:
                 interval = calcular_diferenca_datas(temp_start_data, measurements[i-1]["data"])
                 temperature_intervals.append({
@@ -101,7 +101,7 @@ def process_device_data(device_name, measurements):
                 prev_temp = current_meas["temperatura"]
                 temp_start_data = current_meas["data"]
                 
-            # umidade
+            # Umidade
             if current_meas["umidade"] != prev_hum:
                 interval = calcular_diferenca_datas(hum_start_data, measurements[i-1]["data"])
                 humidity_intervals.append({
@@ -114,7 +114,7 @@ def process_device_data(device_name, measurements):
                 prev_hum = current_meas["umidade"]
                 hum_start_data = current_meas["data"]
                 
-            # luminosidade
+            # Luminosidade
             if current_meas["luminosidade"] != prev_lum:
                 interval = calcular_diferenca_datas(lum_start_data, measurements[i-1]["data"])
                 luminosity_intervals.append({

@@ -24,12 +24,10 @@ def exibir_maiores_intervalos(intervalos, sensor_tipo):
     return resultado
 
 def gerar_string_resultados(intervalos_temperatura, intervalos_umidade, intervalos_luminosidade, tempo_total):
-    # Exibir os intervalos e combinar com o tempo total
     resultado_temperatura = exibir_maiores_intervalos(intervalos_temperatura, "temperatura")
     resultado_umidade = exibir_maiores_intervalos(intervalos_umidade, "umidade")
     resultado_luminosidade = exibir_maiores_intervalos(intervalos_luminosidade, "luminosidade")
 
-    # Montando a string final com todas as informações
     resultado_completo = f"{resultado_temperatura}\n{resultado_umidade}\n{resultado_luminosidade}"
     resultado_completo += f"\nTempo total de processamento: {tempo_total:.2f} segundos.\n"
     
@@ -99,7 +97,7 @@ def process_device_data(device_name, measurements):
         
         for i in range(1, len(measurements)):
             current_meas = measurements[i]
-            # temperatura
+            # Temperatura
             if current_meas["temperatura"] != prev_temp:
                 interval = calcular_diferenca_datas(temp_start_data, measurements[i-1]["data"])
                 temperature_intervals.append({
@@ -112,7 +110,7 @@ def process_device_data(device_name, measurements):
                 prev_temp = current_meas["temperatura"]
                 temp_start_data = current_meas["data"]
                 
-            # umidade
+            # Umidade
             if current_meas["umidade"] != prev_hum:
                 interval = calcular_diferenca_datas(hum_start_data, measurements[i-1]["data"])
                 humidity_intervals.append({
@@ -125,7 +123,7 @@ def process_device_data(device_name, measurements):
                 prev_hum = current_meas["umidade"]
                 hum_start_data = current_meas["data"]
                 
-            # luminosidade
+            # Luminosidade
             if current_meas["luminosidade"] != prev_lum:
                 interval = calcular_diferenca_datas(lum_start_data, measurements[i-1]["data"])
                 luminosity_intervals.append({
@@ -182,7 +180,7 @@ def sequencial():
     intervalos_luminosidade = []
     devices_data = cria_estrutura_devices("dados_recebidos.csv")
 
-    # Exemplo em um algoritmo paralelo
+    # Exemplo em um algoritmo paralelo (vai ser usado pro multiprocessing.)
     # n_processes = 28
     # chunks = gerar_chunks(devices_data, n_processes)
 
