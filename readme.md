@@ -4,7 +4,7 @@
 
 O objetivo deste projeto é desenvolver uma aplicação distribuída que permita o envio e processamento paralelo de dados coletados por sensores em um sistema IoT para cidades inteligentes. O sistema envolve um cliente que envia arquivos CSV com leituras de sensores para um servidor remoto, que os processa e retorna as informações solicitadas. O processamento inclui a identificação de "travamentos" nas leituras dos sensores, isto é, períodos em que os valores de temperatura, umidade ou luminosidade não variam durante um certo intervalo de tempo.
 
-### Descrição do Fluxo
+### Descrição do fluxo do algoritmo
 
 1. **Conexão Cliente-Servidor:**
    - O cliente se conecta ao servidor.
@@ -21,45 +21,27 @@ O objetivo deste projeto é desenvolver uma aplicação distribuída que permita
 3. **Processamento no Servidor:**
    - O servidor rprocessa os dados paralelamente, buscando identificar os maiores intervalos de "travamento" nas leituras de temperatura, umidade e luminosidade e retorna essa inforação ao cliente.
 
-## Funcionalidades Principais
-
-### 1. Identificação de Travamentos de Leituras nos Sensores
-
-- **Temperatura:** Classificação dos 50 maiores intervalos de tempo em que a leitura de temperatura não teve alterações. A classificação incluirá:
-  - Dispositivo que apresentou a característica.
-  - Valor lido.
-  - Data inicial do travamento.
-  - Data final do travamento.
-  - Período de tempo do travamento.
-
-- **Umidade:** Classificação dos 50 maiores intervalos de tempo em que a leitura de umidade não teve alterações. A classificação incluirá:
-  - Dispositivo que apresentou a característica.
-  - Valor lido.
-  - Data inicial do travamento.
-  - Data final do travamento.
-  - Período de tempo do travamento.
-
-- **Luminosidade:** Classificação dos 50 maiores intervalos de tempo em que a leitura de luminosidade não teve alterações. A classificação incluirá:
-  - Dispositivo que apresentou a característica.
-  - Valor lido.
-  - Data inicial do travamento.
-  - Data final do travamento.
-  - Período de tempo do travamento.
-
 ## Tecnologias Utilizadas
 
 - **Linguagens:** Python (para o cliente, servidor, mpi, multiprocessing, dask, sequencial) e C (OpenMP e sequencial)
-- **Protocolos de Comunicação:** TCP/IP
+- **Protocolos de Comunicação:** Sockets TCP
+
+
+## Instalação das bibliotecas
+
+```bash
+pip install "dask[complete]" mpi4py
+```
 
 ## Como Rodar o Projeto
 
-### 1. Instancie o servidor:
+### 1. Inicie o servidor:
 
 ```bash
 python3 server.py
 ```
 
-### 2. Execute o cliente:
+### 2. Inicie o cliente:
 
 ```bash
 python3 client.py
@@ -78,18 +60,8 @@ As datas devem seguir conforme o seguinte exemplo:
 ```bash
 "2022-12-20 12:53:04.238644"
 ```
+Para o desenvolvimento do trabalho, foi utilizada a base de dados da [City Living Lab](https://www.citylivinglab.com/iot-inova-rs).
 
-## Instalação das bibliotecas (linux)
-
-- Dask
-```bash
-pip install "dask[complete]"
-```
-- MPI
-```bash
-pip install mpi4py
-```
-- 
 
 ## Exemplo de Resultado
 
