@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-def compile_and_run_c_program(source_file, output_file, input_argument, compiler="gcc", numero_threads=4):
+def compile_and_run_c_program(source_file, output_file, input_argument, compiler="gcc", numero_threads=1):
     """
     Compila e executa um programa C usando Python.
 
@@ -20,21 +20,25 @@ def compile_and_run_c_program(source_file, output_file, input_argument, compiler
     if not os.path.exists(input_argument):
         print(f"Erro: O arquivo de argumento '{input_argument}' não foi encontrado.")
         return
+    
+    subprocess.run(f"export NUM_THREADS={numero_threads}", shell=True)
 
     # Comando de compilação
     compile_command = [compiler, "-fopenmp", "-o", output_file, source_file]
 
+    print(f"Compilando o programa '{source_file}'...")
     try:
         # Compila o programa
         subprocess.run(compile_command, check=True)
+        print("Compilação bem-sucedida!")
     except subprocess.CalledProcessError as e:
         print(f"Erro na compilação: {e}")
         return
-    input_argument = str(numero_threads) + " " + input_argument
 
     # Comando de execução
     run_command = [f"./{output_file}", input_argument]
 
+    print(f"Executando o programa '{output_file}' com o argumento '{input_argument}'...")
     try:
         # Executa o programa com o número de threads definido
         result = subprocess.run(run_command, check=True, text=True, capture_output=True)
@@ -44,15 +48,14 @@ def compile_and_run_c_program(source_file, output_file, input_argument, compiler
     except subprocess.CalledProcessError as e:
         print(f"Erro na execução: {e}")
         print("Saída de erro:")
-        if e.stderr:
-            print(e.stderr)
-        return None
+        print(e.stderr)
+
 
 def openmp_paralel(n_threads):
     # Defina os nomes dos arquivos e argumento
     source_file = "openmp.c"       # Nome do arquivo-fonte em C
     output_file = "openmp"         # Nome do executável gerado
-    input_argument = "dados_recebidos.csv" # Nome do arquivo CSV passado como argumento
+    input_argument = "devices.csv" # Nome do arquivo CSV passado como argumento
     numero_threads = int(n_threads)             # Número de threads a serem usadas
 
     # Chama a função para compilar e executar
