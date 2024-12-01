@@ -27,7 +27,7 @@ def exec_mpi(n_threads):
 def enviar_string(string, client):       
     # Envia primeiro o tamanho da string
     string_length = len(string)
-    client.sendall(pickle.dumps(string_length))  # Envia o tamanho do conteúdo
+    client.send(pickle.dumps(string_length))  # Envia o tamanho do conteúdo
     
     total_sent = 0  # Variável para controlar o envio
     while total_sent < string_length:
@@ -36,7 +36,7 @@ def enviar_string(string, client):
         total_sent += sent  # Atualiza a quantidade de dados enviados
     
     # Envia um marcador de fim após todos os dados
-    client.sendall(b"EOF")  # Sinal de fim de transmissão
+    client.send(b"EOF")  # Sinal de fim de transmissão
     print("[Server]: Dados enviados com sucesso!")
 
 

@@ -92,7 +92,7 @@ try:
                     continue
             tupla_para_enviar = (option, n_threads)
             data = pickle.dumps(tupla_para_enviar)
-            sock.sendall(data)
+            sock.send(data)
 
             received_string = receive_dynamic_data(sock)
             print(received_string)
