@@ -130,4 +130,4 @@ Top 50 maiores intervalos para luminosidade:
 
 ## Contribuindo
 
-Se você quiser contribuir para o projeto, por favor, faça um fork e envie pull requests. Fique à vontade para sugerir melhorias ou relatar problemas.
+Se você quiser contribuir para o projeto, por favor, faça um fork e envie pull requests.
