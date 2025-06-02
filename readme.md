@@ -4,7 +4,7 @@
 
 O objetivo deste projeto é desenvolver uma aplicação distribuída que permita o envio e processamento paralelo de dados coletados por sensores em um sistema IoT para cidades inteligentes. O sistema envolve um cliente que envia arquivos CSV com leituras de sensores para um servidor remoto, que os processa e retorna as informações solicitadas. O processamento inclui a identificação de "travamentos" nas leituras dos sensores, isto é, períodos em que os valores de temperatura, umidade ou luminosidade não variam durante um certo intervalo de tempo.
 
-Esse trabalho foi submetido ao ERAD/RS 2025. O artigo pode ser acessado clicando [neste link](https://cradrs.github.io/eradrs2025/pdfs/resumos/S3R3.pdf).
+Esse trabalho foi submetido ao ERAD/RS 2025. O artigo pode ser acessado clicando [neste link](https://sol.sbc.org.br/index.php/eradrs/article/view/35354).
 
 ### Descrição do fluxo do algoritmo
 
